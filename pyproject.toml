@@ -20,11 +20,13 @@ dependencies = [
 dev = [
     "pytest>=8.4.1",
     "pytest-django>=4.11.1",
+    "pytest-mock>=3.14.1",
 ]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
+pythonpath = ["."]
 
 [build-system]
 requires = ["hatchling"]

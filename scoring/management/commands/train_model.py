@@ -1,4 +1,4 @@
-from pathlib import Path
+from django.conf import settings
 from django.core.management.base import BaseCommand
 import joblib
 import numpy as np
@@ -9,7 +9,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-MODEL_PATH = Path(__file__).resolve().parents[2] / "ml" / "attendance_model.joblib"
 
 
 class Command(BaseCommand):
@@ -99,8 +98,8 @@ class Command(BaseCommand):
         model.fit(x_train, y_train)
         score = model.score(x_test, y_test)
 
-        MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump(model, MODEL_PATH)
+        settings.MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(model, settings.MODEL_PATH)
 
         self.stdout.write(self.style.SUCCESS(f"Model trained. Validation accuracy={score:.4f}"))
-        self.stdout.write(self.style.SUCCESS(f"Saved at {MODEL_PATH}"))
+        self.stdout.write(self.style.SUCCESS(f"Saved at {settings.MODEL_PATH}"))

@@ -1,10 +1,14 @@
 import asyncio
+from django.conf import settings
+from django.core.management import call_command
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from scoring.ml.service import model_service
 from scoring.models import Prediction, UserProfile
 from scoring.serializers import ScoreRequestSerializer, ScoreResponseSerializer
+
+model_service.model_path = settings.MODEL_PATH
 
 
 class HealthView(APIView):
@@ -51,3 +55,20 @@ class ScoreView(APIView):
         }
         response = ScoreResponseSerializer(response_payload)
         return Response(response.data, status=status.HTTP_200_OK)
+
+
+class TrainModelView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    async def post(self, request):
+        if not settings.ENABLE_MODEL_TRAIN_ENDPOINT:
+            return Response({"detail": "Training endpoint disabled."}, status=status.HTTP_404_NOT_FOUND)
+
+        token = request.headers.get("X-Train-Token", "")
+        if not settings.MODEL_TRAIN_TOKEN or token != settings.MODEL_TRAIN_TOKEN:
+            return Response({"detail": "Unauthorized."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        await asyncio.to_thread(call_command, "train_model")
+        model_service._model = None
+        return Response({"status": "trained", "model_path": str(settings.MODEL_PATH)}, status=status.HTTP_202_ACCEPTED)
