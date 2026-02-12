@@ -19,7 +19,7 @@ cp .env.example .env
 Variables clave en `.env`:
 
 - `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`
-- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT` (interno: `5432`; si usas Docker Compose, host publicado: `5435`)
 - `DB_CONN_MAX_AGE`
 - `MODEL_PATH`
 - `ENABLE_MODEL_TRAIN_ENDPOINT` (default recomendado: `false`)
@@ -30,6 +30,8 @@ Variables clave en `.env`:
 ```bash
 docker compose up --build
 ```
+
+> Nota: Postgres queda publicado en `localhost:5435` (contenedor `5432`).
 
 Luego aplica migraciones y entrena el modelo dentro del contenedor backend:
 
