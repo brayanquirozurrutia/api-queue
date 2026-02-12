@@ -42,6 +42,11 @@ docker compose exec backend python manage.py train_model
 
 API disponible en: `http://localhost:8000/api/v1/`
 
+Documentación OpenAPI/Swagger:
+
+- Schema OpenAPI (JSON): `http://localhost:8000/api/schema/`
+- Swagger UI: `http://localhost:8000/api/docs/`
+
 ## 3) Levantar en local (sin Docker)
 
 ```bash
