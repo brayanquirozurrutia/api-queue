@@ -5,6 +5,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-dev-key")
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
+MODEL_PATH = Path(os.getenv("MODEL_PATH", BASE_DIR / "scoring" / "ml" / "attendance_model.joblib"))
+ENABLE_MODEL_TRAIN_ENDPOINT = os.getenv("ENABLE_MODEL_TRAIN_ENDPOINT", "false").lower() == "true"
+MODEL_TRAIN_TOKEN = os.getenv("MODEL_TRAIN_TOKEN", "")
 
 INSTALLED_APPS = [
     "django.contrib.auth",
