@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 import joblib
 import numpy as np
 import pandas as pd
@@ -14,15 +14,56 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 class Command(BaseCommand):
     help = "Train attendance scoring model with mock data"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--size",
+            type=int,
+            default=120000,
+            help="Number of mock records used for training.",
+        )
+        parser.add_argument(
+            "--seed",
+            type=int,
+            default=42,
+            help="Random seed for reproducible datasets.",
+        )
+
     def handle(self, *args, **kwargs):
-        rng = np.random.default_rng(42)
-        size = 25000
+        size = kwargs["size"]
+        seed = kwargs["seed"]
+
+        if size < 1000:
+            raise CommandError("--size must be at least 1000")
+
+        rng = np.random.default_rng(seed)
 
         data = pd.DataFrame(
             {
                 "age": rng.integers(16, 75, size),
-                "country": rng.choice(["CL", "AR", "PE", "MX", "CO"], size=size),
-                "city": rng.choice(["Santiago", "Lima", "Bogota", "CDMX", "BuenosAires"], size=size),
+                "country": rng.choice(
+                    ["CL", "AR", "PE", "MX", "CO", "UY", "EC", "BR", "US", "ES"],
+                    size=size,
+                    p=[0.2, 0.15, 0.12, 0.16, 0.12, 0.05, 0.06, 0.06, 0.04, 0.04],
+                ),
+                "city": rng.choice(
+                    [
+                        "Santiago",
+                        "Valparaiso",
+                        "Lima",
+                        "Bogota",
+                        "Medellin",
+                        "CDMX",
+                        "Monterrey",
+                        "BuenosAires",
+                        "Cordoba",
+                        "Montevideo",
+                        "Quito",
+                        "SaoPaulo",
+                        "Miami",
+                        "Madrid",
+                    ],
+                    size=size,
+                ),
                 "account_age_days": rng.integers(1, 3650, size),
                 "purchases_last_12_months": rng.poisson(6, size),
                 "canceled_orders": rng.poisson(1.2, size),
@@ -35,6 +76,20 @@ class Command(BaseCommand):
                 "attendance_rate": rng.uniform(0, 1, size),
             }
         )
+
+        trusted_segment = rng.random(size) < 0.3
+        risky_segment = rng.random(size) < 0.15
+
+        data.loc[trusted_segment, "account_age_days"] = rng.integers(900, 3650, trusted_segment.sum())
+        data.loc[trusted_segment, "attendance_rate"] = rng.uniform(0.65, 1, trusted_segment.sum())
+        data.loc[trusted_segment, "event_affinity_score"] = rng.uniform(0.6, 1, trusted_segment.sum())
+        data.loc[trusted_segment, "payment_failures_ratio"] = rng.uniform(0, 0.08, trusted_segment.sum())
+
+        data.loc[risky_segment, "tickets_per_order_avg"] = rng.uniform(3.2, 8.5, risky_segment.sum())
+        data.loc[risky_segment, "night_purchase_ratio"] = rng.uniform(0.45, 1, risky_segment.sum())
+        data.loc[risky_segment, "resale_reports_count"] = rng.poisson(3.3, risky_segment.sum())
+        data.loc[risky_segment, "payment_failures_ratio"] = rng.uniform(0.12, 0.55, risky_segment.sum())
+        data.loc[risky_segment, "attendance_rate"] = rng.uniform(0, 0.45, risky_segment.sum())
 
         risk_index = (
             (data["tickets_per_order_avg"] - 1.8) * 0.30
@@ -103,3 +158,4 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"Model trained. Validation accuracy={score:.4f}"))
         self.stdout.write(self.style.SUCCESS(f"Saved at {settings.MODEL_PATH}"))
+        self.stdout.write(self.style.SUCCESS(f"Training records generated: {size}"))
