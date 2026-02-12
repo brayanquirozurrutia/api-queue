@@ -10,7 +10,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:${PATH}"
 
 COPY pyproject.toml README.md ./
-RUN uv sync --no-dev
+RUN uv sync --no-dev --no-install-project
 
 COPY . .
 

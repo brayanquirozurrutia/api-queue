@@ -14,6 +14,8 @@ services:
       retries: 10
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
     restart: unless-stopped
 
   backend:
@@ -28,6 +30,7 @@ services:
       MODEL_PATH: ${MODEL_PATH:-/app/scoring/ml/attendance_model.joblib}
       ENABLE_MODEL_TRAIN_ENDPOINT: ${ENABLE_MODEL_TRAIN_ENDPOINT:-false}
       MODEL_TRAIN_TOKEN: ${MODEL_TRAIN_TOKEN:-}
+      PYTHON_GIL: "1"
     depends_on:
       db:
         condition: service_healthy
