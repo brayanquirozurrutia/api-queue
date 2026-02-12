@@ -57,6 +57,12 @@ Forma recomendada (operativa):
 python manage.py train_model
 ```
 
+Por defecto se generan **120.000 registros mock** para entrenar el modelo. También puedes ajustar el volumen y semilla:
+
+```bash
+python manage.py train_model --size 300000 --seed 123
+```
+
 El artefacto se guarda en la ruta configurada por `MODEL_PATH`.
 
 ## 5) Endpoint de scoring
