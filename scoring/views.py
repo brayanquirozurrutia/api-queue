@@ -1,4 +1,6 @@
+import inspect
 import logging
+from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.core.management import call_command
 from rest_framework import status
@@ -14,7 +16,36 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncCapableAPIView(APIView):
-    pass
+    """APIView base that can safely resolve async handlers under DRF sync dispatch."""
+
+    @staticmethod
+    async def _await_response(response):
+        return await response
+
+    def dispatch(self, request, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+        request = self.initialize_request(request, *args, **kwargs)
+        self.request = request
+        self.headers = self.default_response_headers
+
+        try:
+            self.initial(request, *args, **kwargs)
+
+            if request.method.lower() in self.http_method_names:
+                handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
+            else:
+                handler = self.http_method_not_allowed
+
+            response = handler(request, *args, **kwargs)
+            if inspect.isawaitable(response):
+                response = async_to_sync(self._await_response)(response)
+
+        except Exception as exc:
+            response = self.handle_exception(exc)
+
+        self.response = self.finalize_response(request, response, *args, **kwargs)
+        return self.response
 
 
 class HealthView(AsyncCapableAPIView):
