@@ -1,9 +1,12 @@
 import asyncio
+import inspect
 import logging
+from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.core.management import call_command
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from scoring.ml.service import model_service
@@ -14,7 +17,34 @@ model_service.model_path = settings.MODEL_PATH
 logger = logging.getLogger(__name__)
 
 
-class HealthView(APIView):
+class AsyncCapableAPIView(APIView):
+    async def dispatch(self, request, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+        request = await sync_to_async(self.initialize_request, thread_sensitive=True)(request, *args, **kwargs)
+        self.request = request
+        self.headers = self.default_response_headers
+
+        try:
+            await sync_to_async(self.initial, thread_sensitive=True)(request, *args, **kwargs)
+            if request.method.lower() in self.http_method_names:
+                handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
+            else:
+                handler = self.http_method_not_allowed
+
+            if inspect.iscoroutinefunction(handler):
+                response = await handler(request, *args, **kwargs)
+            else:
+                response = await sync_to_async(handler, thread_sensitive=True)(request, *args, **kwargs)
+
+        except Exception as exc:
+            response = await sync_to_async(self.handle_exception, thread_sensitive=True)(exc)
+
+        self.response = await sync_to_async(self.finalize_response, thread_sensitive=True)(request, response, *args, **kwargs)
+        return self.response
+
+
+class HealthView(AsyncCapableAPIView):
     authentication_classes = []
     permission_classes = []
 
@@ -34,7 +64,7 @@ class HealthView(APIView):
         return Response({"status": "ok"})
 
 
-class ScoreView(APIView):
+class ScoreView(AsyncCapableAPIView):
     authentication_classes = []
     permission_classes = []
 
@@ -109,12 +139,14 @@ class ScoreView(APIView):
             }
             response = ScoreResponseSerializer(response_payload)
             return Response(response.data, status=status.HTTP_200_OK)
+        except ValidationError:
+            raise
         except Exception:
             logger.exception("Unhandled error while scoring user request")
             raise
 
 
-class TrainModelView(APIView):
+class TrainModelView(AsyncCapableAPIView):
     authentication_classes = []
     permission_classes = []
 
