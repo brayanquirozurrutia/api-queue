@@ -16,6 +16,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5435:5432"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped
 
   backend:
@@ -31,11 +35,19 @@ services:
       ENABLE_MODEL_TRAIN_ENDPOINT: ${ENABLE_MODEL_TRAIN_ENDPOINT:-false}
       MODEL_TRAIN_TOKEN: ${MODEL_TRAIN_TOKEN:-}
       PYTHON_GIL: "1"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
+      GUNICORN_THREADS: ${GUNICORN_THREADS:-4}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "8000:8000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped
 
 volumes:
