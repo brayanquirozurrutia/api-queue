@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from django.conf import settings
 from django.core.management import call_command
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, inline_serializer
@@ -10,6 +11,7 @@ from scoring.models import Prediction, UserProfile
 from scoring.serializers import ScoreRequestSerializer, ScoreResponseSerializer
 
 model_service.model_path = settings.MODEL_PATH
+logger = logging.getLogger(__name__)
 
 
 class HealthView(APIView):
@@ -75,37 +77,41 @@ class ScoreView(APIView):
         tags=["scoring"],
     )
     async def post(self, request):
-        serializer = ScoreRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        payload = serializer.validated_data
+        try:
+            serializer = ScoreRequestSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            payload = serializer.validated_data
 
-        user, _ = await UserProfile.objects.aupdate_or_create(
-            email=payload["email"],
-            defaults=payload,
-        )
+            user, _ = await UserProfile.objects.aupdate_or_create(
+                email=payload["email"],
+                defaults=payload,
+            )
 
-        features = {k: v for k, v in payload.items() if k != "email"}
-        attendance_probability, reseller_probability, risk_label = await asyncio.to_thread(
-            model_service.predict,
-            features,
-        )
+            features = {k: v for k, v in payload.items() if k != "email"}
+            attendance_probability, reseller_probability, risk_label = await asyncio.to_thread(
+                model_service.predict,
+                features,
+            )
 
-        await Prediction.objects.acreate(
-            user=user,
-            attendance_probability=attendance_probability,
-            reseller_probability=reseller_probability,
-            risk_label=risk_label,
-            model_version=model_service.version,
-        )
+            await Prediction.objects.acreate(
+                user=user,
+                attendance_probability=attendance_probability,
+                reseller_probability=reseller_probability,
+                risk_label=risk_label,
+                model_version=model_service.version,
+            )
 
-        response_payload = {
-            "attendance_probability": attendance_probability,
-            "reseller_probability": reseller_probability,
-            "risk_label": risk_label,
-            "model_version": model_service.version,
-        }
-        response = ScoreResponseSerializer(response_payload)
-        return Response(response.data, status=status.HTTP_200_OK)
+            response_payload = {
+                "attendance_probability": attendance_probability,
+                "reseller_probability": reseller_probability,
+                "risk_label": risk_label,
+                "model_version": model_service.version,
+            }
+            response = ScoreResponseSerializer(response_payload)
+            return Response(response.data, status=status.HTTP_200_OK)
+        except Exception:
+            logger.exception("Unhandled error while scoring user request")
+            raise
 
 
 class TrainModelView(APIView):
