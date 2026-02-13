@@ -23,6 +23,7 @@ RUN uv sync --dev --no-install-project
 COPY . .
 
 RUN chmod +x docker/entrypoint.sh \
+    && mkdir -p /app/.data \
     && groupadd --system app \
     && useradd --system --gid app --create-home --home-dir /home/app app \
     && chown -R app:app /app

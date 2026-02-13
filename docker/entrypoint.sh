@@ -1,12 +1,26 @@
 #!/usr/bin/env sh
 set -eu
 
+MODEL_PATH="${MODEL_PATH:-/app/scoring/ml/attendance_model.joblib}"
+
 echo "[entrypoint] Running migrations"
 .venv/bin/python manage.py migrate --noinput
 
-if [ ! -f scoring/ml/attendance_model.joblib ]; then
+if [ ! -f "$MODEL_PATH" ]; then
   echo "[entrypoint] Model not found, training initial model"
   .venv/bin/python manage.py train_model
+fi
+
+if [ "${DEV_RELOAD:-false}" = "true" ]; then
+  echo "[entrypoint] Starting uvicorn (reload enabled)"
+  exec .venv/bin/uvicorn config.asgi:application \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --reload \
+    --reload-dir /app \
+    --reload-exclude .venv \
+    --reload-exclude .git \
+    --reload-exclude .pytest_cache
 fi
 
 echo "[entrypoint] Starting gunicorn"

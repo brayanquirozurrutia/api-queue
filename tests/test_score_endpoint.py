@@ -93,6 +93,7 @@ def test_score_endpoint_logs_unhandled_errors(client, monkeypatch, caplog):
         raise RuntimeError("model missing")
 
     monkeypatch.setattr("scoring.views.model_service.predict", boom)
+    client.raise_request_exception = False
 
     with caplog.at_level("ERROR"):
         response = client.post(

@@ -129,6 +129,9 @@ docker compose up --build -d
 ```
 
 > Nota: Postgres queda publicado en `localhost:5435` (contenedor `5432`).
+> El backend usa bind-mount del repo y `DEV_RELOAD=true` por defecto, así que reinicia la API cuando cambia código sin rebuild.
+> Si quieres modo producción, define `DEV_RELOAD=false`.
+> El modelo se guarda en `/app/.data/attendance_model.joblib` (volumen `backend_data`); puedes cambiarlo con `MODEL_PATH_DOCKER`.
 
 Aplicar migraciones y entrenar modelo dentro del contenedor backend:
 
@@ -253,18 +256,18 @@ Recomendación senior:
 
 ## 9) Tests
 
-### 9.1 Tests en local
-
-Con venv activo:
+### 9.1 Tests en local (rapidos, sin Docker)
 
 ```bash
-pytest -q
+./scripts/test.sh local
 ```
+
+Esto usa SQLite por defecto via `config.test_settings`, ideal para correr rapido en el host.
 
 > Si `pytest` no existe en tu entorno, instala dependencias de desarrollo con:
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install -e . --group dev
 ```
 
 Con `uv`:
@@ -273,7 +276,7 @@ Con `uv`:
 uv run pytest -q
 ```
 
-### 9.2 Tests con contenedor arriba
+### 9.2 Tests con Postgres (contenedor arriba)
 
 1. Levanta servicios:
 
@@ -281,10 +284,16 @@ uv run pytest -q
 docker compose up -d
 ```
 
-2. Corre tests dentro del backend:
+2. Corre tests con Postgres dentro del backend:
 
 ```bash
-docker compose exec backend pytest -q
+./scripts/test.sh postgres
+```
+
+Si cambiaste dependencias (por ejemplo `pyproject.toml`), fuerza rebuild:
+
+```bash
+./scripts/test.sh postgres --build
 ```
 
 3. (Opcional) Si cambiaste esquema/modelos:
