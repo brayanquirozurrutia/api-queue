@@ -1,6 +1,42 @@
-.venv/
-__pycache__/
-*.pyc
+# --- Entornos locales y secretos ---
 .env
+.env.*
+!.env.example
+
+# --- Entornos virtuales ---
+.venv/
+venv/
+env/
+
+# --- Python: bytecode y caches ---
+__pycache__/
+*.py[cod]
+*.so
+
+# --- Herramientas de calidad y testing ---
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# --- Artefactos de build/distribución ---
+build/
+dist/
+*.egg-info/
+
+# --- IDE / editor ---
+.idea/
+.vscode/
+
+# --- Sistema operativo ---
+.DS_Store
+Thumbs.db
+
+# --- Logs y BDs locales ---
+*.log
+*.sqlite3
+
+# --- Artefactos del proyecto ---
 scoring/ml/attendance_model.joblib

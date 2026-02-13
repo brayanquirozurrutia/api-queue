@@ -1,24 +1,46 @@
-.git
+# --- Control de versiones ---
+.git/
 .gitignore
-.pytest_cache
-.mypy_cache
-.ruff_cache
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-*.sqlite3
-*.log
+
+# --- Variables de entorno y secretos ---
 .env
 .env.*
-venv
-.venv
-node_modules
-dist
-build
+!.env.example
+
+# --- Entornos virtuales ---
+.venv/
+venv/
+env/
+
+# --- Python: bytecode y caches ---
+__pycache__/
+*.py[cod]
+
+# --- Caches de herramientas ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
-htmlcov
-.idea
-.vscode
+.coverage.*
+htmlcov/
+
+# --- Artefactos de build ---
+build/
+dist/
+*.egg-info/
+
+# --- IDE / editor y SO ---
+.idea/
+.vscode/
 .DS_Store
+Thumbs.db
+
+# --- Logs y archivos locales ---
+*.log
+*.sqlite3
+
+# --- Dependencias frontend (si aparecen) ---
+node_modules/
+
+# --- Artefactos del proyecto ---
 scoring/ml/attendance_model.joblib
