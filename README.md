@@ -12,7 +12,49 @@ Servicio API para clasificar la probabilidad de asistencia real a un concierto v
 
 ---
 
-## 1) Configuración inicial
+## 1) Requisitos previos
+
+Antes de correr el proyecto, valida estos prerequisitos:
+
+- **Python 3.13+** (alineado con `requires-python = ">=3.13"` en `pyproject.toml`).
+- **pip** actualizado.
+- **Entorno virtual (`venv`)** disponible.
+- **Docker + Docker Compose** (si usarás el flujo en contenedores).
+- **PostgreSQL** accesible (si correrás sin Docker).
+
+### 1.1 Verificación rápida
+
+```bash
+python3 --version
+python3 -m pip --version
+python3 -m venv --help
+docker --version
+docker compose version
+```
+
+### 1.2 Error común al crear el venv en Ubuntu/Debian (`ensurepip is not available`)
+
+Si al ejecutar `python3 -m venv .venv` aparece este error:
+
+```text
+The virtual environment was not created successfully because ensurepip is not available.
+```
+
+instala el paquete `venv` de tu versión de Python y vuelve a crear el entorno:
+
+```bash
+sudo apt update
+sudo apt install -y python3.13-venv
+rm -rf .venv
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+> Si tu sistema tiene otra versión de Python instalada (por ejemplo 3.12), usa el paquete equivalente (`python3.12-venv`).
+
+---
+
+## 2) Configuración inicial
 
 ```bash
 cp .env.example .env
@@ -29,11 +71,11 @@ Variables clave en `.env`:
 
 ---
 
-## 2) Entorno local con venv (recomendado para IDE)
+## 3) Entorno local con venv (recomendado para IDE)
 
 Si quieres evitar errores de intérprete en VS Code/PyCharm y que el IDE detecte librerías correctamente, usa un entorno virtual local (`.venv`) dentro del repo.
 
-### 2.1 Crear y activar el venv
+### 3.1 Crear y activar el venv
 
 ```bash
 python3 -m venv .venv
@@ -48,37 +90,39 @@ Para desactivarlo:
 deactivate
 ```
 
-### 2.2 Instalar dependencias con el venv activado
+### 3.2 Instalar dependencias con el venv activado
 
-Con el entorno activo, instala dependencias del proyecto:
+Con el entorno activo, instala dependencias del proyecto (incluyendo herramientas de test):
 
 ```bash
-pip install -e .
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
 ```
 
 Si quieres usar `uv` (manteniendo el entorno local):
 
 ```bash
-uv sync
+uv sync --group dev
 ```
 
-### 2.3 Configurar el intérprete en el IDE
+### 3.3 Configurar el intérprete en el IDE
 
 - **VS Code**:
   1. `Ctrl/Cmd + Shift + P`
   2. `Python: Select Interpreter`
   3. Elegir `./.venv/bin/python`
 
-- **PyCharm / IntelliJ**:
+- **PyCharm / IntelliJ** (incluye versiones recientes):
   1. `Settings/Preferences > Project > Python Interpreter`
   2. `Add Interpreter > Existing`
   3. Seleccionar `./.venv/bin/python`
+  4. Confirmar que el intérprete sea **Python 3.13+**
 
 Esto evita el clásico error de imports no resueltos cuando ejecutas fuera del entorno.
 
 ---
 
-## 3) Levantar en Docker (recomendado para integración)
+## 4) Levantar en Docker (recomendado para integración)
 
 ```bash
 docker compose up --build -d
@@ -108,7 +152,7 @@ docker compose down
 
 ---
 
-## 4) Levantar en local (sin Docker)
+## 5) Levantar en local (sin Docker)
 
 ### Opción A (usando venv + pip)
 
@@ -130,7 +174,7 @@ uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000
 
 ---
 
-## 5) Entrenar el modelo
+## 6) Entrenar el modelo
 
 Forma recomendada (operativa):
 
@@ -148,7 +192,7 @@ El artefacto se guarda en la ruta configurada por `MODEL_PATH`.
 
 ---
 
-## 6) Endpoint de scoring
+## 7) Endpoint de scoring
 
 `POST /api/v1/score/`
 
@@ -186,7 +230,7 @@ Respuesta:
 
 ---
 
-## 7) Entrenamiento vía endpoint (opcional, apagado por defecto)
+## 8) Entrenamiento vía endpoint (opcional, apagado por defecto)
 
 Ruta: `POST /api/v1/model/train/`
 
@@ -207,14 +251,20 @@ Recomendación senior:
 
 ---
 
-## 8) Tests
+## 9) Tests
 
-### 8.1 Tests en local
+### 9.1 Tests en local
 
 Con venv activo:
 
 ```bash
 pytest -q
+```
+
+> Si `pytest` no existe en tu entorno, instala dependencias de desarrollo con:
+
+```bash
+python -m pip install -e ".[dev]"
 ```
 
 Con `uv`:
@@ -223,7 +273,7 @@ Con `uv`:
 uv run pytest -q
 ```
 
-### 8.2 Tests con contenedor arriba
+### 9.2 Tests con contenedor arriba
 
 1. Levanta servicios:
 
@@ -245,7 +295,7 @@ docker compose exec backend python manage.py migrate
 
 ---
 
-## 9) Conexión a PostgreSQL desde DataGrip / DBeaver / TablePlus
+## 10) Conexión a PostgreSQL desde DataGrip / DBeaver / TablePlus
 
 Cuando corres con Docker Compose, usa estos datos:
 
@@ -266,7 +316,7 @@ Cuando corres con Docker Compose, usa estos datos:
 
 ---
 
-## 10) Recomendaciones para un enfoque de ML más senior
+## 11) Recomendaciones para un enfoque de ML más senior
 
 Para endurecer el ciclo de vida del modelo y acercarlo a prácticas de ML Engineering senior:
 
