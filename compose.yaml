@@ -48,6 +48,17 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    develop:
+      watch:
+        - action: sync+restart
+          path: .
+          target: /app
+          ignore:
+            - .git/
+            - .venv/
+            - __pycache__/
+            - postgres_data/
+            - '*.pyc'
     restart: unless-stopped
 
 volumes:
