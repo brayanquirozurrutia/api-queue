@@ -16,10 +16,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5435:5432"
+    # The postgres image needs filesystem-related Linux capabilities on startup
+    # to set ownership/permissions in the data directory.
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
     restart: unless-stopped
 
   backend:
